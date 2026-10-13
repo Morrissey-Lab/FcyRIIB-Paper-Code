@@ -1,0 +1,10 @@
+napari[all]
+magicgui
+tifffile
+scikit-image
+scipy
+pandas
+numpy
+matplotlib
+h5py
+psutil
