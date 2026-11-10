@@ -1,0 +1,104 @@
+# =============================================================================
+# Erika small beads project config. This project pipeline is a thin wrapper
+# around the shared cell_tracker segmentation package — see
+# python pipelines/cell segmentation/ilastik/cell tracker/README.md for how
+# segmentation itself works.
+#
+# NO NUCLEAR STAIN in this dataset (macrophages in Green - 488, target
+# readout in Far Red - 640/647) -- unlike Erika TNFa, there's no
+# nuclear_channel key here at all. Segmentation uses the "green" panel,
+# which reuses the SAME trained ilastik classifier as Erika TNFa's "red"
+# panel (see cell tracker/green/README.md) but splits cells directly from
+# the membrane mask via distance-transform watershed instead of
+# nucleus-seeded watershed, since there's no nucleus to seed from.
+# =============================================================================
+
+paths:
+  raw_dir: data/raw                              # <replicate>/<condition>/*.nd2 goes here (full dataset)
+  test_dir: data/test                            # flat folder, just the test .nd2 file(s) -- see use_test_data below
+  segmentation_work_dir: data/segmentation_work   # cell_tracker's own working files (stacks, probability maps, instance masks, manifest.csv)
+  qc_dir: data/qc                                 # this project's QC panels (input image next to what was identified)
+  results_dir: data/results                       # this project's per-cell / per-condition CSVs
+
+# TOGGLE: set to true to run the pipeline against the small always-available
+# test dataset (data/test/) instead of the full
+# data/raw/<replicate>/<condition>/ tree. Flip to false for a real run over
+# all your data. Both notebooks read this flag.
+use_test_data: false
+
+segmentation:
+  # Path to the shared cell tracker repo's own panel library (relative to
+  # this config file's directory).
+  panels_root: "cell_tracker"
+  panel_name: "green"
+  # Full path to ilastik's headless launcher on this machine.
+  ilastik_executable: "/Applications/ilastik-1.4.1.post1-arm64-OSX.app/Contents/ilastik-release/run_ilastik.sh"
+
+zstack:
+  max_project: true
+
+# No nuclear_channel key -- this dataset has no nuclear stain at all.
+# run_segmentation_pipeline is called with nuclear_channel=None (its
+# default) in notebook 01, which switches it to distance-transform
+# watershed instead of nucleus-seeded watershed.
+
+# The target readout channel — project-specific, NOT part of segmentation
+# (segmentation only ever sees the green panel's membrane channel, Green - 488).
+target_channel:
+  name: "Far Red - 640"
+  wavelength_nm: 640
+  index: null
+
+background_subtraction:
+  enabled: true
+  # segmentation_background: for each replicate, compute ONE background value
+  # from a manually chosen reference point (reference_points below) -- the
+  # mean Far Red-640 intensity across every pixel in that single point NOT
+  # covered by any segmented cell. That one value is then subtracted from
+  # every point in the same replicate (clipped at 0) before per-cell
+  # intensity is measured. Other options: median | rolling_ball (generic,
+  # whole-image methods that don't need a reference point -- see
+  # cell_tracker.measure.background_subtract).
+  method: segmentation_background
+  # One (condition, point_index) pair per replicate -- point_index is the
+  # zero-based index from the manifest (same one qc_point_indices uses),
+  # NOT the point_label. Pick a point that's representative of real
+  # background in that replicate (e.g. an empty field, or a typical field's
+  # non-cell area) -- ideally NOT one you're also relying on for real
+  # measurements, though it's fine if it's also otherwise-normal data since
+  # the reference point's OWN cells are still measured normally.
+  #
+  # One entry per real replicate. Replace the three TODO placeholders below
+  # with your actual condition + point_index choices for those replicates.
+  reference_points:
+    20260812: {condition: "KO IgG", point_index: 12}
+    20260813: {condition: "KO IgG", point_index: 11}   # TODO: set condition + point_index for this replicate
+    20260814: {condition: "KO IgG", point_index: 5}   # TODO: set condition + point_index for this replicate
+    20260817: {condition: "KO IgG", point_index: 2}   # TODO: set condition + point_index for this replicate
+
+# Exclude cells touching the frame edge when measuring target intensity --
+# an incompletely-imaged cell biases its MFI, so these are dropped at
+# measurement time (see measure_intensity_per_cell's exclude_border param
+# in notebook 02) rather than at segmentation time.
+exclude_border: false
+
+# QC panels (membrane threshold / final cell instances, each shown as input
+# image next to what was identified) are generated for only the FIRST
+# image/point processed in a run, to keep QC fast. Set to false to generate
+# QC for every single image instead.
+qc_first_only: false
+
+# Explicit point_index values to always generate QC for, regardless of
+# qc_first_only. Set to null to go back to the qc_first_only behavior above.
+# (Background-subtraction reference points don't need to be listed here --
+# notebook 01 always generates QC for those separately, see
+# background_subtraction.reference_points above.)
+qc_point_indices: null
+
+# Frame-level exclusion thresholds live in the green panel's panel.yaml
+# (max_membrane_area_fraction), not here -- they're segmentation-quality
+# knobs shared across every project using that panel.
+
+# Only needed if you want plot labels that differ from the raw condition
+# folder names, e.g. {"veh": "Vehicle", "tnfa": "TNFa"}.
+condition_label_overrides: {}

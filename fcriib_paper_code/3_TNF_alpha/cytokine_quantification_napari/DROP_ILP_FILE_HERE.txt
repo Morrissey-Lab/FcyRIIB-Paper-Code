@@ -1,0 +1,11 @@
+This folder needs 1 accessory file that isn't included here:
+
+    membrane_segmentation.ilp   (the Ilastik project)
+
+Drag it into THIS folder. In the script's original setup it lived at:
+    C:\Users\ECHOe\OneDrive\Desktop\TNFa\cell tracker\red\membrane_segmentation.ilp
+
+You do NOT need any .yaml or .json file for this script.
+The Ilastik program itself (ilastik.exe) is installed separately, not stored here.
+
+Once the .ilp is in this folder, you can delete this note. See README.md.
