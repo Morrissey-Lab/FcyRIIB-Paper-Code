@@ -1,0 +1,24 @@
+[project]
+name = "cell-tracker"
+version = "0.1.0"
+description = "Reusable ND2 -> ilastik pixel classification -> per-cell instance segmentation pipeline"
+requires-python = ">=3.10"
+dependencies = [
+    "nd2>=0.9.0",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scikit-image>=0.22",
+    "scipy>=1.11",
+    "tifffile>=2023.7.10",
+    "h5py>=3.9",
+    "matplotlib>=3.7",
+    "PyYAML>=6.0",
+    "tqdm>=4.66",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
