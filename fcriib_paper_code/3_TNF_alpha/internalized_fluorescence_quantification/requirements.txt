@@ -1,6 +1,0 @@
--e "./cell_tracker"
-jupyter>=1.0
-notebook>=7.0
-
-# NOTE: ilastik is NOT installed via pip — see config.yaml's
-# segmentation.ilastik_executable comment.
